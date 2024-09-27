@@ -20,7 +20,6 @@ const AppContextProvider = ({ children }) => {
 					Authorization: `${localStorage.getItem("token")}`,
 				},
 			});
-			console.log(res);
 			if (res.data) {
 				setLoggedIn(true);
 				const temp = res.data.user;

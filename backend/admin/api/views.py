@@ -15,50 +15,55 @@ class UserSignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        serializer = UserSignupSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                # Email validation
-                email = serializer.validated_data.get('email')
-                if not self.validate_email(email):
-                    return Response({
-                        'status': 406,
-                        'message': 'Invalid email format'
-                    })
+        try:
+            # Get name, email, and password from request data
+            name = request.data.get('name')
+            email = request.data.get('email')
+            password = request.data.get('password')
 
-                user = User.objects.filter(email=email).first()
-                if user:
-                    return Response({
-                        'status': 400,
-                        'message': 'Account Already exists, Please SignIn'
-                    })
-                else:
-                    password = serializer.validated_data.get('password')
-
-                    # Password validation
-                    if not self.validate_password(password):
-                        return Response({
-                            'status': 406,
-                            'message': 'Password must be at least 8 characters long and contain at least one number and one special character'
-                        })
-                    serializer.save()
-                    jwt_token = self.create_jwt(email)
-                    return Response({
-                        'status': 200,
-                        'jwt': jwt_token,
-                        'name': serializer.validated_data.get("name"),
-                        'email': email,
-                    })
-            except Exception as e:
+            # Email validation
+            if not email or not self.validate_email(email):
                 return Response({
-                    'status': 500,
-                    'message': 'Error while creating user',
-                    'error': str(e)
+                    'status': 406,
+                    'message': 'Invalid email format'
                 })
-        else:
+
+            # Check if user already exists
+            user = User.objects.filter(email=email).first()
+            if user:
+                return Response({
+                    'status': 400,
+                    'message': 'Account Already exists, Please SignIn'
+                })
+
+            # Password validation
+            if not password or not self.validate_password(password):
+                return Response({
+                    'status': 406,
+                    'message': 'Password must be at least 8 characters long and contain at least one number and one special character'
+                })
+
+            # Create a new user
+            user = User.objects.create(
+                name=name,
+                email=email,
+                password=make_password(password)  # Hash the password before saving
+            )
+            user.save()
+
+            # Generate JWT token
+            jwt_token = self.create_jwt(email)
             return Response({
-                'status': 406,
-                'message': "serializer.errors['password'][0]"
+                'status': 200,
+                'jwt': jwt_token,
+                'name': name,
+                'email': email,
+            })
+        except Exception as e:
+            return Response({
+                'status': 500,
+                'message': 'Error while creating user',
+                'error': str(e)
             })
 
     def validate_email(self, email):
@@ -86,62 +91,57 @@ class UserSignupView(APIView):
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return token
+
 
 
 class UserSigninView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        serializer = UserSigninSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                # Email validation
-                email = serializer.validated_data.get('email')
-                if not self.validate_email(email):
+        try:
+            # Get email and password from request data
+            email = request.data.get('email')
+            password = request.data.get('password')
+
+            # Email validation
+            if not email or not self.validate_email(email):
+                return Response({
+                    'status': 406,
+                    'message': 'Invalid email format'
+                })
+
+            user = User.objects.filter(email=email).first()
+            if user:
+                # Password validation
+                if not password or not self.validate_password(password):
                     return Response({
                         'status': 406,
-                        'message': 'Invalid email format'
+                        'message': 'Password must be at least 8 characters long and contain at least one number and one special character'
                     })
 
-                user = User.objects.filter(email=email).first()
-                if user:
-                    password = serializer.validated_data.get('password')
-
-                    # Password validation
-                    if not self.validate_password(password):
-                        return Response({
-                            'status': 406,
-                            'message': 'Password must be at least 8 characters long and contain at least one number and one special character'
-                        })
-
-                    if not check_password(password, user.password):
-                        return Response({
-                            'status': 401,
-                            'message': 'Incorrect Password'
-                        })
-                    else:
-                        jwt_token = self.create_jwt(email)
-                        return Response({
-                            'status': 201,
-                            'jwt': jwt_token,
-                            'name': user.name,
-                            'email': user.email,
-                        })
-                else:
+                if not check_password(password, user.password):
                     return Response({
-                        'status': 404,
-                        'message': 'User does not exist, Please SignUp'
+                        'status': 401,
+                        'message': 'Incorrect Password'
                     })
-            except Exception as e:
+                else:
+                    jwt_token = self.create_jwt(email)
+                    return Response({
+                        'status': 201,
+                        'jwt': jwt_token,
+                        'name': user.name,
+                        'email': user.email,
+                    })
+            else:
                 return Response({
-                    'status': 500,
-                    'message': 'You are not Registered yet',
-                    'error': str(e)
+                    'status': 404,
+                    'message': 'User does not exist, Please SignUp'
                 })
-        else:
+        except Exception as e:
             return Response({
-                'status': 406,
-                'message': serializer.errors['password'][0]
+                'status': 500,
+                'message': 'You are not Registered yet',
+                'error': str(e)
             })
 
     def validate_email(self, email):
@@ -169,6 +169,7 @@ class UserSigninView(APIView):
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return token
+
 
     
 class GetUserView(APIView):
