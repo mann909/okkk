@@ -93,8 +93,6 @@ class UserSignupView(APIView):
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return token
 
-
-
 class UserSigninView(APIView):
     permission_classes = [AllowAny]
 
@@ -188,18 +186,28 @@ class GetUserView(APIView):
             # Decode token to get user information
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             user = User.objects.filter(email=payload.get('email')).first()
+            files = File.objects.all()
+            # all_file_data = [FileSerializer(i) for i in files]
+            all_file_data=[]
+            for i in files:
+                ser = FileSerializer(i)
+                all_file_data+=ser.data,
 
             if user:
                 # Return user data
                 user_data = {
                     'id': user.id,
                     'name': user.name,
-                    'email': user.email
+                    'email': user.email,
+                    'ratingList' : user.ratingList,
+                    'bookmarkList' : user.bookMarkList
                 }
                 print(user_data)
                 return Response({
                     'status': 200,
-                    'user': user_data
+                    'user': user_data,
+                    'allFiles': all_file_data,
+                    'recommendedFiles': [],
                 })
             else:
                 return Response({
@@ -246,6 +254,10 @@ class GetUserByIdView(APIView):
                 '   message': 'Error while fetching user data',
                 'error': str(e)
             })
+
+class UserView(generics.ListAPIView):
+    queryset = User.objects.all() 
+    serializer_class = UserIdSerializer        
 
 class SetGender(APIView):
     def post(self, request, format=None):
@@ -459,3 +471,270 @@ class PostFileView(APIView):
                 'status':400,
                 'message': "Some error occured wile uploading file",
                 })
+
+class GetFileView(APIView):
+
+    def get(self, request, file_id, format=None):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+            
+            file = File.objects.filter(id=file_id).first()
+
+            if not file:
+                return Response({
+                    'stauts': 404,
+                    'message': 'File not found'
+                })
+            
+            serializer = FileSerializer(file)
+            return Response({
+                        'status': 200,
+                        'file': serializer.data
+                    })
+
+        except Exception as e:
+            # Handle any other exceptions
+            return Response({
+                'status': 500,
+                'message': 'Error while fetching file data',
+                'error': str(e)
+            })       
+
+class UpdateRatingView(APIView):
+    permission_classes = [AllowAny]
+
+    def put(self, request):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.filter(email=payload.get('email')).first()
+            if not user:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+
+            # Extract request data
+            prevRating = request.data.get("prevRating")
+            newRating = request.data.get("newRating")
+            file_id = request.data.get('id')
+
+            # Fetch the file
+            file = File.objects.filter(id=file_id).first()
+            if not file:
+                return Response({
+                    'status': 404,
+                    'message': 'File not found'
+                })
+
+            # Handle case where file.rating is None
+            if file.rating is None:
+                file.rating = 0
+
+            # Update file rating
+            file.rating = (file.rating - prevRating) + newRating
+            file.save()
+
+            # Fetch the uploadedBy user from the User model separately
+            uploaded_by_user = User.objects.filter(id=file.uploadedBy.id).first()
+            if not uploaded_by_user:
+                return Response({
+                    'status': 404,
+                    'message': 'Uploader user not found'
+                })
+
+            # Handle case where uploadedBy user's ratings is None
+            if uploaded_by_user.ratings is None:
+                uploaded_by_user.ratings = 0
+
+            # Update the uploader's ratings by subtracting prevRating and adding newRating
+            uploaded_by_user.ratings = (uploaded_by_user.ratings - prevRating) + newRating
+            uploaded_by_user.save()
+
+            # Update requesting user's ratingList
+            updated_rating = {'file_id': file_id, 'rating': newRating}
+
+            # Check if the user has already rated the file
+            found = False
+            for rating_entry in user.ratingList:
+                if rating_entry['file_id'] == file_id:
+                    rating_entry['rating'] = newRating
+                    found = True
+                    break
+
+            if not found:
+                # Add new rating to ratingList if not already rated
+                user.ratingList.append(updated_rating)
+
+            user.save()
+
+            return Response({
+                'status': 200,
+                'message': 'Rating successfully updated',
+                'ratingList': user.ratingList
+            })
+
+        except Exception as e:
+            # Handle any other exceptions
+            return Response({
+                'status': 500,
+                'message': 'Error while updating rating',
+                'error': str(e)
+            })
+
+class UpdateViewsView(APIView):
+    permission_classes = [AllowAny]
+
+    def put(self, request):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.filter(email=payload.get('email')).first()
+            if not user:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+
+            # Extract request data
+            file_id = request.data.get('id')
+
+            # Fetch the file
+            file = File.objects.filter(id=file_id).first()
+            if not file:
+                return Response({
+                    'status': 404,
+                    'message': 'File not found'
+                })
+
+            # Update file views
+            file.views = (file.views or 0) + 1  # Increment views by 1
+            file.save()
+
+            # Update the uploader's views
+            uploaded_by_user = User.objects.filter(id=file.uploadedBy.id).first()
+            if not uploaded_by_user:
+                return Response({
+                    'status': 404,
+                    'message': 'Uploader user not found'
+                })
+
+            uploaded_by_user.views = (uploaded_by_user.views or 0) + 1  # Increment uploader's views
+            uploaded_by_user.save()
+
+            # Update requesting user's viewList
+            updated_view = {'file_id': file_id, 'views': file.views}
+
+            # Check if the user has already viewed the file
+            found = False
+            for view_entry in user.viewList:
+                if view_entry['file_id'] == file_id:
+                    found = True
+                    view_entry['views'] = view_entry['views'] + 1
+                    break
+
+            if not found:
+                # Add new view entry if not already recorded
+                user.viewList.append(updated_view)
+
+            user.save()
+
+            return Response({
+                'status': 200,
+                'message': 'Views successfully updated',
+                'viewList': user.viewList
+            })
+
+        except Exception as e:
+            # Handle any other exceptions
+            return Response({
+                'status': 500,
+                'message': 'Error while updating views',
+                'error': str(e)
+            })
+        
+class UpdateBookmarkView(APIView):
+    permission_classes = [AllowAny]
+
+    def put(self, request):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.filter(email=payload.get('email')).first()
+            if not user:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+
+            # Extract request data
+            file_id = request.data.get('id')
+
+            # Fetch the file
+            file = File.objects.filter(id=file_id).first()
+            if not file:
+                return Response({
+                    'status': 404,
+                    'message': 'File not found'
+                })
+
+            # Check if the user has already bookmarked the file
+            found = False
+            for bookmark in user.bookMarkList:
+                if bookmark['file_id'] == file_id:
+                    found = True
+                    break
+
+            if not found:
+                # Add new bookmark entry if not already recorded
+                user.bookMarkList.append({'file_id': file_id})
+            else:
+                # Remove from bookMarkList if it exists
+                user.bookMarkList = [bookmark for bookmark in user.bookMarkList if bookmark['file_id'] != file_id]
+
+            # Save the user with updated bookmark list
+            user.save()
+
+            return Response({
+                'status': 200,
+                'message': 'Bookmark successfully updated',
+                'bookMarkList': user.bookMarkList
+            })
+
+        except Exception as e:
+            # Handle any other exceptions
+            return Response({
+                'status': 500,
+                'message': 'Error while updating bookmark',
+                'error': str(e)
+            })

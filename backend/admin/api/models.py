@@ -8,28 +8,33 @@ class User(models.Model):
     email = models.CharField(max_length=100, unique=True)
     phoneNumber = models.CharField(max_length=100, null=True)
     intrest = models.CharField(max_length=100, null=True)
-    ratings=models.BigIntegerField(default=0)
-    views=models.BigIntegerField(default=0)
-    uploads=models.BigIntegerField(default=0)
+    ratings = models.BigIntegerField(default=0)
+    ratingList = models.JSONField(default=[])
+    views = models.BigIntegerField(default=0)
+    viewList = models.JSONField(default=[])
+    uploads = models.BigIntegerField(default=0)
     gender = models.CharField(max_length=20, blank=True, null=True)
+    bookMarkList = models.JSONField(default=[])
 
-    def _str_(self):
-        return self.name 
+    def __str__(self):
+        return self.name
+
 
 class File(models.Model):
-    uploadedBy = models.ForeignKey(User,on_delete=models.CASCADE)
+    uploadedBy = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=100)
     description = models.CharField(max_length=500)
     category = models.CharField(max_length=500)
     file = models.FileField(upload_to='documents/')
     uploadedAt = models.DateTimeField(auto_now_add=True)
-    rating=models.CharField(max_length=100,null=True)
-    views=models.CharField(max_length=100,null=True)
-    downloads=models.CharField(max_length=100,null=True)
+    rating = models.BigIntegerField(default=0, null=True)
+    views = models.BigIntegerField(default=0, null=True)
+    downloads = models.BigIntegerField(default=0, null=True)
     
-    def _str_(self):
-        return self.name +" : "+ self.uploadedBy.name 
+    def __str__(self):
+        return f"{self.name} : {self.uploadedBy.name}"
+
 
 class ChatGroup(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -43,3 +48,6 @@ class Message(models.Model):
     chatGroup = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     message = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return f"Message from {self.sender.name} in {self.chatGroup.name}"

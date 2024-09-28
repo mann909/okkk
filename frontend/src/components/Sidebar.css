@@ -102,6 +102,7 @@
 }
 
 .sidebar li:hover .tooltip {
+	color: black;
 	opacity: 1;
 	pointer-events: auto;
 	transition: all 0.4s ease;

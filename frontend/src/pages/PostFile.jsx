@@ -4,7 +4,6 @@ import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import Sidebar from "../components/Sidebar";
-// import Sidebar from "../components/Sidebar";
 
 const PostFile = () => {
 	const navigate = useNavigate();
@@ -24,9 +23,9 @@ const PostFile = () => {
 	}, [navigate]);
 
 	async function sendRequest(e) {
-		console.log(file);
 		e.preventDefault();
-		if (fileInfo.name === "") {
+		console.log(fileInfo);
+		if (!fileInfo.name) {
 			toast.error("Please enter your file name");
 			return;
 		}
@@ -40,6 +39,11 @@ const PostFile = () => {
 		}
 		if (fileInfo.category === "None") {
 			toast.error("Please select a category");
+			return;
+		}
+		const fs = file.name.split(".");
+		if (fileInfo.type != fs[fs.length - 1]) {
+			toast.error("File type does not match with the file name");
 			return;
 		}
 
@@ -273,9 +277,9 @@ const PostFile = () => {
 							<input
 								type="file"
 								id="file"
-								accept="file/*"
+								accept="application/pdf, image/*"
+								className="text-white"
 								onChange={(e) => {
-									console.log(e.target.files[0]);
 									setFile(e.target.files[0]);
 								}}
 							/>

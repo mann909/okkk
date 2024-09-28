@@ -1,9 +1,22 @@
-import { React, useEffect, useState } from "react";
+import { React, useContext, useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import images from "../assets";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { AppContext } from "../context/AppContext";
+import FileCard from "../components/FileCard";
 
 const Home = () => {
 	const [curImageIndex, setImageIndex] = useState(0);
+	const { recommendedFiles, allFiles, topRated, popular } = useContext(
+		AppContext
+	);
+
+	if (popular) {
+		console.log("got popular");
+		console.log(popular);
+	}
+
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setImageIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -12,33 +25,33 @@ const Home = () => {
 		return () => clearInterval(interval);
 	}, []);
 
-	const recommendedMaterials = [
-		{
-			id: 1,
-			title: "Introduction to React",
-			subject: "Web Development",
-			rating: 4.5,
-		},
-		{ id: 2, title: "Advanced Calculus", subject: "Mathematics", rating: 4.8 },
-		{
-			id: 3,
-			title: "Organic Chemistry Basics",
-			subject: "Chemistry",
-			rating: 4.2,
-		},
-		{
-			id: 4,
-			title: "World History: 20th Century",
-			subject: "History",
-			rating: 4.6,
-		},
-		{
-			id: 5,
-			title: "Machine Learning Fundamentals",
-			subject: "Computer Science",
-			rating: 4.7,
-		},
-	];
+	// const topRated = [
+	// 	{
+	// 		id: 1,
+	// 		title: "Introduction to React",
+	// 		subject: "Web Development",
+	// 		rating: 4.5,
+	// 	},
+	// 	{ id: 2, title: "Advanced Calculus", subject: "Mathematics", rating: 4.8 },
+	// 	{
+	// 		id: 3,
+	// 		title: "Organic Chemistry Basics",
+	// 		subject: "Chemistry",
+	// 		rating: 4.2,
+	// 	},
+	// 	{
+	// 		id: 4,
+	// 		title: "World History: 20th Century",
+	// 		subject: "History",
+	// 		rating: 4.6,
+	// 	},
+	// 	{
+	// 		id: 5,
+	// 		title: "Machine Learning Fundamentals",
+	// 		subject: "Computer Science",
+	// 		rating: 4.7,
+	// 	},
+	// ];
 
 	return (
 		<>
@@ -138,32 +151,57 @@ const Home = () => {
 						</div>
 					</div>
 				</div>
-				<div className="bg-[#11101d] w-full py-16 px-4 lg:px-20">
-					<h2 className="text-3xl font-bold text-white mb-8 ml-20">
-						Recommendations
-					</h2>
-					<div className="flex overflow-x-scroll no-scrollbar space-x-6 pb-6 ml-20">
-						{recommendedMaterials.map((material) => (
-							<div
-								key={material.id}
-								className="flex-shrink-0 w-64 bg-white rounded-xl shadow-lg overflow-hidden"
-							>
-								<div className="p-6">
-									<h3 className="font-bold text-xl mb-2 text-[#11101d]">
-										{material.title}
-									</h3>
-									<p className="text-gray-600 mb-4">{material.subject}</p>
-									<div className="flex items-center">
-										<span className="text-yellow-500 mr-1">★</span>
-										<span className="text-gray-700">
-											{material.rating.toFixed(1)}
-										</span>
-									</div>
-								</div>
-							</div>
-						))}
+				{topRated && (
+					<div className="bg-[#11101d] w-full py-16 px-4 lg:px-20">
+						<h2 className="text-3xl font-bold text-white mb-8 ml-20">
+							Top Rated :
+						</h2>
+						<div className="flex overflow-x-scroll no-scrollbar space-x-6 pb-6 ml-20">
+							{topRated.map((material, index) => (
+								<FileCard key={index} material={material} />
+							))}
+						</div>
 					</div>
-				</div>
+				)}
+
+				{popular && (
+					<div className="bg-[#11101d] w-full py-16 px-4 lg:px-20">
+						<h2 className="text-3xl font-bold text-white mb-8 ml-20">
+							Popular :
+						</h2>
+						<div className="flex overflow-x-scroll no-scrollbar space-x-6 pb-6 ml-20">
+							{popular.map((material, index) => (
+								<FileCard key={index} material={material} />
+							))}
+						</div>
+					</div>
+				)}
+
+				{recommendedFiles && (
+					<div className="bg-[#11101d] w-full py-16 px-4 lg:px-20">
+						<h2 className="text-3xl font-bold text-white mb-8 ml-20">
+							Recommended :
+						</h2>
+						<div className="flex overflow-x-scroll no-scrollbar space-x-6 pb-6 ml-20">
+							{recommendedFiles.map((material, index) => (
+								<FileCard key={index} material={material} />
+							))}
+						</div>
+					</div>
+				)}
+
+				{allFiles && (
+					<div className="bg-[#11101d] w-full py-16 px-4 lg:px-20">
+						<h2 className="text-3xl font-bold text-white mb-8 ml-20">
+							All Files :
+						</h2>
+						<div className="flex overflow-x-scroll no-scrollbar space-x-6 pb-6 ml-20">
+							{allFiles.map((material, index) => (
+								<FileCard key={index} material={material} />
+							))}
+						</div>
+					</div>
+				)}
 			</div>
 		</>
 	);

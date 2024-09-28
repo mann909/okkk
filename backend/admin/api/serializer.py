@@ -5,7 +5,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'name', 'email')
+        fields = ('id','name','email','ratings','uploads','views','gender', 'ratingList')
 
 class UserIdSerializer(serializers.ModelSerializer):
     # doubts = DoubtSerializer(many=True, read_only=True)
@@ -53,7 +53,25 @@ class GetChatsSerializer(serializers.ModelSerializer):
         model = ChatGroup
         fields = ['name', 'createdOn', 'messages']   
 
+from rest_framework import serializers
+from .models import File
+
 class FileSerializer(serializers.ModelSerializer):
+    uploadedBy = UserSerializer()  # Will serialize the user's name
+
     class Meta:
         model = File
-        fields = ("name",'type','description','file','category')                 
+        fields = (
+            'id',
+            'name',
+            'type',
+            'description',
+            'file',
+            'category',
+            'uploadedBy',
+            'uploadedAt',
+            'rating',
+            'views',
+            'downloads'
+        )
+               

@@ -7,6 +7,7 @@ import ViewFile from "./pages/ViewFile";
 import PostFile from "./pages/PostFile";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import Leaderboard from "./pages/Leaderboard";
 
 function App() {
 	return (
@@ -20,6 +21,7 @@ function App() {
 					<Route path="/chat/:chat_name" element={<ChatPage />} />
 					<Route path="/" element={<Home />} />
 					<Route path="/dashboard/:user_id" element={<Dashboard />} />
+					<Route path="leaderboard/" element={<Leaderboard />} />
 				</Routes>
 			</BrowserRouter>
 		</>
