@@ -10,6 +10,7 @@ import {
 	FaUser,
 	FaFolder,
 } from "react-icons/fa";
+import Sidebar from "../components/Sidebar";
 
 const ViewFile = () => {
 	const { user } = useContext(AppContext);
@@ -22,13 +23,12 @@ const ViewFile = () => {
 	const file = {
 		id: 1,
 		name: "Example Document",
-		type: "pdf",
-		// type: "image",
+		// type: "pdf",
+		type: "image",
 		description: "An interesting document about physics",
 		category: "Physics",
-		file: "https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprdb5166443.pdf",
-		// file:
-		// "https://i.pinimg.com/736x/08/af/04/08af04208cdda0bb68ef1cf61e9bb6e0.jpg",
+		// file: "https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprdb5166443.pdf",
+		file: "http://127.0.0.1:8000/media/documents/birds.jpg",
 		uploadedAt: new Date().toLocaleDateString(),
 		uploadedBy: "John Doe",
 		rating: 10,
@@ -73,6 +73,7 @@ const ViewFile = () => {
 
 	return (
 		<div className="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen text-white">
+			<Sidebar />
 			<div className="container mx-auto px-4 py-8">
 				<div className="max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
 					<div className="p-6 border-b border-gray-700">

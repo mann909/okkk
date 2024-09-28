@@ -4,6 +4,9 @@ import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import ChatPage from "./pages/ChatPage";
 import ViewFile from "./pages/ViewFile";
+import PostFile from "./pages/PostFile";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
 	return (
@@ -12,8 +15,11 @@ function App() {
 				<Routes>
 					<Route path="/signup" element={<Signup />} />
 					<Route path="/signin" element={<Signin />} />
+					<Route path="/postFile" element={<PostFile />} />
 					<Route path="/viewFile/:file_id" element={<ViewFile />} />
 					<Route path="/chat/:chat_name" element={<ChatPage />} />
+					<Route path="/" element={<Home />} />
+					<Route path="/dashboard/:user_id" element={<Dashboard />} />
 				</Routes>
 			</BrowserRouter>
 		</>

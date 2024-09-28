@@ -7,6 +7,14 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'name', 'email')
 
+class UserIdSerializer(serializers.ModelSerializer):
+    # doubts = DoubtSerializer(many=True, read_only=True)
+    # solutions = SolutionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id','name','email','ratings','uploads','views','gender')        
+
 class UserSignupSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -43,4 +51,9 @@ class GetChatsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatGroup
-        fields = ['name', 'createdOn', 'messages']            
+        fields = ['name', 'createdOn', 'messages']   
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ("name",'type','description','file','category')                 

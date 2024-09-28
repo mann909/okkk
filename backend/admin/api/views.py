@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.contrib.auth.hashers import make_password,check_password
 from rest_framework.permissions import AllowAny
 from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Create your views here.
 class UserSignupView(APIView):
@@ -211,6 +212,80 @@ class GetUserView(APIView):
                 'message': 'Error while fetching user data',
                 'error': str(e)
             })    
+ 
+class GetUserByIdView(APIView):
+    permission_classes = [AllowAny]  # Ensure the user is authenticated
+
+    def get(self, request, user_id, format=None):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+
+            user = User.objects.filter(id=user_id).first()
+
+            if user:
+                # Serialize the user object, not the user_id
+                serializer = UserIdSerializer(user)
+                return Response({
+                    'status': 200,
+                    'user': serializer.data
+                })
+            else:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+        except Exception as e:
+            return Response({
+                'status': 500,
+                '   message': 'Error while fetching user data',
+                'error': str(e)
+            })
+
+class SetGender(APIView):
+    def post(self, request, format=None):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+            gender = request.data.get('gender')
+            
+            
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.filter(email=payload.get('email')).first()
+
+            if gender != 'male' and gender != 'female':
+                return Response({
+                    'status' : 404,
+                    'message' : 'Invalid gender'
+                })
+            
+            
+            user.gender = gender
+            user.save()
+            print(user.gender)
+            return Response({
+                'status' : 200,
+                'message' : 'gender successfully updated'
+            })
+
+        except Exception as e:
+            # Handle any other exceptions
+            return Response({
+                'status': 500,
+                'message': 'Error while fetching doubt data',
+                'error': str(e)
+            })        
         
 class CreateChatGroup(APIView):      
     def post(self, request, format=None):
@@ -348,3 +423,39 @@ class GetChatsView(APIView):
                 'message': 'Error while fetching doubt data',
                 'error': str(e)
             })        
+        
+class PostFileView(APIView):
+    permission_classes = [AllowAny]
+    parser_classes = (MultiPartParser, FormParser)
+    
+    def post(self,request):
+        print(request.data)
+        try:
+            id = request.data.get('user_id')
+            user = User.objects.filter(id=id).first()
+            if not user:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                    })
+            else:
+                serializer = FileSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save(uploadedBy=user)
+                    return Response({
+                        'status':200,
+                        'message':'File uploaded successfully'
+                    })
+                else:
+                    print(serializer.errors)
+                    return Response({
+                    'status': 401,
+                    'message': 'Invalid Data Entered'
+                    })
+                    
+        except Exception as e:
+            print(e)
+            return Response({
+                'status':400,
+                'message': "Some error occured wile uploading file",
+                })

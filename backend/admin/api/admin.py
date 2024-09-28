@@ -13,3 +13,4 @@ class MessageAdmin(admin.ModelAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(ChatGroup, ChatGroupAdmin)
 admin.site.register(Message, MessageAdmin)
+admin.site.register(File)

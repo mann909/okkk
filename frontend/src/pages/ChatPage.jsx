@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useChatGroup } from "../hooks/useChatGroup";
 import { AppContext } from "../context/AppContext";
-// import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { useCreateGroup } from "../hooks/useCreateGroup";
 import Loading from "../components/Loading";
 
@@ -126,7 +126,7 @@ const ChatPage = () => {
 
 	return (
 		<div className="flex flex-col min-h-screen bg-gray-900 bg-yel">
-			{/* <Sidebar /> */}
+			<Sidebar />
 			<div className="flex-1 flex flex-col pl-[5rem] sm:pl-[5rem]">
 				{/* Header Section */}
 				<div className="sticky top-0 z-10 bg-gray-800 p-[0.5rem] sm:p-[1rem] shadow-md flex items-center justify-between">
