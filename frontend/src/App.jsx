@@ -8,6 +8,10 @@ import PostFile from "./pages/PostFile";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
+import BookmarkPage from "./pages/BookmarkPage";
+import AllUsers from "./pages/AllUsers";
+import Chatrooms from "./pages/Chatrooms";
+import AllFiles from "./pages/AllFiles";
 
 function App() {
 	return (
@@ -21,7 +25,11 @@ function App() {
 					<Route path="/chat/:chat_name" element={<ChatPage />} />
 					<Route path="/" element={<Home />} />
 					<Route path="/dashboard/:user_id" element={<Dashboard />} />
-					<Route path="leaderboard/" element={<Leaderboard />} />
+					<Route path="/leaderboard" element={<Leaderboard />} />
+					<Route path="/bookmarks" element={<BookmarkPage />} />
+					<Route path="/allUsers" element={<AllUsers />} />
+					<Route path="/chatrooms" element={<Chatrooms />} />
+					<Route path="/allFiles" element={<AllFiles />} />
 				</Routes>
 			</BrowserRouter>
 		</>

@@ -10,6 +10,15 @@ from django.contrib.auth.hashers import make_password,check_password
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.http import JsonResponse
+from django.views import View
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
 
 # Create your views here.
 class UserSignupView(APIView):
@@ -193,6 +202,17 @@ class GetUserView(APIView):
                 ser = FileSerializer(i)
                 all_file_data+=ser.data,
 
+            recommended_files_data = []
+            recommended_model_files = getRecommendedFiles(all_file_data, user.ratingList, user.viewList)
+            recommended_file_ids=[]
+            for i in recommended_model_files:
+                recommended_file_ids.append(i['id'])
+                # Fetch File objects for recommended file IDs
+            recommended_files = File.objects.filter(id__in=recommended_file_ids)
+            recommended_files_data = FileSerializer(recommended_files, many=True).data
+
+            # Serialize user data
+
             if user:
                 # Return user data
                 user_data = {
@@ -200,14 +220,15 @@ class GetUserView(APIView):
                     'name': user.name,
                     'email': user.email,
                     'ratingList' : user.ratingList,
-                    'bookmarkList' : user.bookMarkList
+                    'bookmarkList' : user.bookMarkList,
+                    'chatList' : user.chatList
                 }
                 print(user_data)
                 return Response({
                     'status': 200,
                     'user': user_data,
                     'allFiles': all_file_data,
-                    'recommendedFiles': [],
+                    'recommendedFiles': recommended_files_data,
                 })
             else:
                 return Response({
@@ -259,6 +280,46 @@ class UserView(generics.ListAPIView):
     queryset = User.objects.all() 
     serializer_class = UserIdSerializer        
 
+class UserFilesView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            # Get user_id from request data
+            user_id = request.data.get('user_id')
+            
+            if not user_id:
+                return Response({
+                    'status': 400,
+                    'message': 'User ID is required'
+                })
+
+            # Find the user by ID
+            user = User.objects.filter(id=user_id).first()
+            if not user:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+
+            # Get all files uploaded by this user
+            files = File.objects.filter(uploadedBy=user)
+            
+            # Serialize the files
+            serializer = FileSerializer(files, many=True)
+            
+            return Response({
+                'status': 200,
+                'files': serializer.data
+            })
+
+        except Exception as e:
+            return Response({
+                'status': 500,
+                'message': 'Error while fetching user files',
+                'error': str(e)
+            })
+
 class SetGender(APIView):
     def post(self, request, format=None):
         try:
@@ -299,7 +360,7 @@ class SetGender(APIView):
                 'error': str(e)
             })        
         
-class CreateChatGroup(APIView):      
+class CreateChatGroup(APIView):
     def post(self, request, format=None):
         try:
             # Extract token from the Authorization header
@@ -310,44 +371,133 @@ class CreateChatGroup(APIView):
                     'message': 'No token provided'
                 })
             
-            group = ChatGroup.objects.filter(name=request.data.get('name')).first()
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            requesting_user = User.objects.filter(email=payload.get('email')).first()
+            if not requesting_user:
+                return Response({
+                    'status': 404,
+                    'message': 'Requesting user not found'
+                })
 
-            if group:
+            # Extract the chat group name and ensure it's valid (e.g., "1_2")
+            group_name = request.data.get('name')
+            if not group_name or "_" not in group_name:
+                return Response({
+                    'status': 400,
+                    'message': 'Invalid chat group name format'
+                })
+
+            # Split the group name to extract user IDs and sort them
+            user1_id, user2_id = group_name.split("_")
+
+            # Ensure both users exist
+            user1 = User.objects.filter(id=user1_id).first()
+            user2 = User.objects.filter(id=user2_id).first()
+            if not user1 or not user2:
+                return Response({
+                    'status': 404,
+                    'message': 'One or both users not found'
+                })
+
+            # Standardize the chat group name by always sorting user IDs (e.g., 1_2 and 2_1 become 1_2)
+            sorted_group_name = "_".join(sorted([user1_id, user2_id]))
+
+            # Check if the group already exists
+            existing_group = ChatGroup.objects.filter(name=sorted_group_name).first()
+            if existing_group:
                 return Response({
                     'status': 400,
                     'message': 'Group already exists'
                 })
-            
+
+            # Create new chat group
             serializer = CreateChatGroupSerializer(data={
-                'name': request.data.get('name'),
+                'name': sorted_group_name,  # Use the standardized name
             })
 
-            try:
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({
-                        'status': 200,
-                        'message': 'The chat group is successfully created'
-                    })
-                else:
-                    return Response({
-                        'status': 400,
-                        'errors': serializer.errors['error'][0]
-                    })
-            except Exception as e:
+            if serializer.is_valid():
+                chat_group = serializer.save()
+
+                # Add the chat group ID to both users' chatList if not already added
+                if not any(chat['chat_group_id'] == chat_group.id for chat in user1.chatList):
+                    user1.chatList.append({'chat_group_id': chat_group.id})
+                    user1.save()
+
+                if not any(chat['chat_group_id'] == chat_group.id for chat in user2.chatList):
+                    user2.chatList.append({'chat_group_id': chat_group.id})
+                    user2.save()
+
                 return Response({
-                    'status': 500,
-                    'message': serializer.errors['error'][0]
-                })   
-                
+                    'status': 200,
+                    'message': 'Chat group successfully created',
+                    'chatGroupId': chat_group.id  # Return the chat group ID as well
+                })
+            else:
+                return Response({
+                    'status': 400,
+                    'errors': serializer.errors
+                })
 
         except Exception as e:
             # Handle any other exceptions
             return Response({
                 'status': 500,
-                'message': 'Error while fetching doubt data',
+                'message': 'Error occurred while creating chat group',
                 'error': str(e)
-            })      
+            })
+     
+class GetChatroomsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            # Get the token from the request
+            token = request.headers.get('Authorization', '').split(' ')[-1]
+            
+            # Decode the token to get the user's email
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user_email = payload.get('email')
+            
+            # Get the user
+            user = User.objects.get(email=user_email)
+            
+            # Get the chat_group_ids from the user's chatList
+            chat_group_ids = [chat['chat_group_id'] for chat in user.chatList]
+            
+            # Get the chatrooms
+            chatrooms = ChatGroup.objects.filter(id__in=chat_group_ids)
+            
+            # Serialize the chatrooms
+            serializer = ChatGroupSerializer(chatrooms, many=True)
+            
+            print("Serialized data:", serializer.data)  # Debug print
+            
+            return Response({
+                'status': 200,
+                'chatrooms': serializer.data
+            })
+        except User.DoesNotExist:
+            return Response({
+                'status': 404,
+                'message': 'User not found'
+            })
+        except jwt.ExpiredSignatureError:
+            return Response({
+                'status': 401,
+                'message': 'Token has expired'
+            })
+        except jwt.DecodeError:
+            return Response({
+                'status': 401,
+                'message': 'Invalid token'
+            })
+        except Exception as e:
+            return Response({
+                'status': 500,
+                'message': 'Error fetching chatrooms',
+                'error': str(e)
+            })
 
 class PostMessageView(APIView):
     def post(self, request, chat_name, format=None):
@@ -451,7 +601,7 @@ class PostFileView(APIView):
                     'message': 'User not found'
                     })
             else:
-                serializer = FileSerializer(data=request.data)
+                serializer = PostFileSerializer(data=request.data)
                 if serializer.is_valid():
                     serializer.save(uploadedBy=user)
                     return Response({
@@ -738,3 +888,119 @@ class UpdateBookmarkView(APIView):
                 'message': 'Error while updating bookmark',
                 'error': str(e)
             })
+        
+class GetAllBookmarkView(APIView):
+    permission_classes = [AllowAny]  # Ensure the user is authenticated
+
+    def get(self, request, format=None):
+        try:
+            # Extract token from the Authorization header
+            token = request.headers.get('Authorization', '')
+            if not token:
+                return Response({
+                    'status': 401,
+                    'message': 'No token provided'
+                })
+
+            # Decode token to get user information
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.filter(email=payload.get('email')).first()
+            
+            if user:
+                # Retrieve the user's bookmark list
+                bookmark_list = user.bookMarkList  # Assuming this is a list of dicts with 'file_id'
+                
+                # Extract file IDs from the bookmark list
+                file_ids = [entry['file_id'] for entry in bookmark_list]
+                
+                # Filter files based on the extracted file IDs
+                bookmarked_files = File.objects.filter(id__in=file_ids)
+                
+                # Serialize the bookmarked files
+                serialized_files = FileSerializer(bookmarked_files, many=True).data
+
+                return Response({
+                    'status': 200,
+                    'files': serialized_files,
+                })
+            else:
+                return Response({
+                    'status': 404,
+                    'message': 'User not found'
+                })
+        except jwt.ExpiredSignatureError:
+            return Response({
+                'status': 401,
+                'message': 'Token has expired'
+            })
+        except jwt.DecodeError:
+            return Response({
+                'status': 401,
+                'message': 'Token is invalid'
+            })
+        except Exception as e:
+            return Response({
+                'status': 500,
+                'message': 'Error while fetching user data',
+                'error': str(e)
+            })
+
+
+def getRecommendedFiles(all_file_data, ratingList, viewList):
+    # Convert data to DataFrames
+    files_df = pd.DataFrame(all_file_data)
+    views_df = pd.DataFrame([{"id": int(i['file_id']), "viewCount": int(i['views'])} for i in viewList])
+    ratings_df = pd.DataFrame([{"id": int(i['file_id']), "rating": int(i['rating'])} for i in ratingList])
+
+    # Merge DataFrames with explicit column naming
+    df = files_df.merge(views_df, on='id', how='left', suffixes=('', '_view'))
+    df = df.merge(ratings_df, on='id', how='left', suffixes=('', '_rating'))
+
+    # Fill NaN values
+    df['viewCount'].fillna(0, inplace=True)
+    df['rating'].fillna(0, inplace=True)
+
+    # Normalize viewCount and rating
+    df['normalized_views'] = (df['viewCount'] - df['viewCount'].min()) / (df['viewCount'].max() - df['viewCount'].min() + 1e-8)
+    df['normalized_rating'] = (df['rating'] - df['rating'].min()) / (df['rating'].max() - df['rating'].min() + 1e-8)
+
+    # Calculate a combined score (you can adjust the weights)
+    df['score'] = 0.6 * df['normalized_views'] + 0.4 * df['normalized_rating']
+
+    # Sort by score to get top files
+    top_files = df.nlargest(10, 'score')
+
+    # Create a content string for each file
+    df['content'] = df['name'] + ' ' + df['description'] + ' ' + df['category']
+    top_files['content'] = top_files['name'] + ' ' + top_files['description'] + ' ' + top_files['category']
+
+    # Combine content of top files
+    top_content = ' '.join(top_files['content'])
+
+    # Create TF-IDF vectorizer
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(df['content'])
+
+    # Transform top_content
+    top_content_vector = tfidf.transform([top_content])
+
+    # Calculate cosine similarity
+    cosine_sim = cosine_similarity(top_content_vector, tfidf_matrix)
+
+    # Get similarity scores
+    sim_scores = list(enumerate(cosine_sim[0]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+
+    # Get the indices of the top 20 similar files (excluding exact matches)
+    top_indices = [i[0] for i in sim_scores if i[1] < 1][:20]
+
+    # Get the recommended files
+    recommendations = df.iloc[top_indices]
+
+    # Sort recommendations by score
+    recommendations = recommendations.sort_values('score', ascending=False)
+
+    # Convert recommendations to list of dictionaries
+    recommendations_list = recommendations.to_dict(orient='records')
+
+    return recommendations_list

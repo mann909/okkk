@@ -26,13 +26,19 @@ const ViewFile = () => {
 	const [isRatingLoaded, setIsRatingLoaded] = useState(false);
 	const [isBookmarked, setIsBookmarked] = useState(false); // State for bookmark
 
+	if (file) {
+		console.log("file details");
+		console.log(file);
+		console.log(`${BACKEND_URL}${file.file}`);
+	}
+
 	async function sendViewsRequest() {
 		if (file && user) {
 			try {
 				const response = await axios.put(
 					`${BACKEND_URL}/api/v1/file/updateViews`,
 					{
-						id: file_id,
+						id: parseInt(file_id),
 					},
 					{
 						headers: {
@@ -59,7 +65,7 @@ const ViewFile = () => {
 	const loadUserRating = () => {
 		if (user && user.ratingList && Array.isArray(user.ratingList)) {
 			const userRating = user.ratingList.find(
-				(item) => item.file_id === file_id
+				(item) => item.file_id === parseInt(file_id)
 			);
 			if (userRating) {
 				setRating(userRating.rating);
@@ -74,7 +80,7 @@ const ViewFile = () => {
 	const loadBookmark = () => {
 		if (user && user.bookmarkList && Array.isArray(user.bookmarkList)) {
 			const bookmark = user.bookmarkList.find(
-				(item) => item.file_id === file_id
+				(item) => item.file_id === parseInt(file_id)
 			);
 			if (bookmark) {
 				setIsBookmarked(true);
@@ -96,7 +102,7 @@ const ViewFile = () => {
 			const response = await axios.put(
 				`${BACKEND_URL}/api/v1/file/updateRating`,
 				{
-					id: file_id,
+					id: parseInt(file_id),
 					prevRating: prevRating,
 					newRating: newRating,
 				},
@@ -121,7 +127,7 @@ const ViewFile = () => {
 
 	const handleDownload = () => {
 		console.log("Downloading file:", file.name);
-		window.open(file.file, "_blank");
+		window.open(`${BACKEND_URL}${file.file}`, "_blank");
 	};
 
 	// Function to toggle bookmark
@@ -131,7 +137,7 @@ const ViewFile = () => {
 				const response = await axios.put(
 					`${BACKEND_URL}/api/v1/user/updateBookmarkList`,
 					{
-						id: file_id,
+						id: parseInt(file_id),
 					},
 					{
 						headers: {
@@ -155,7 +161,7 @@ const ViewFile = () => {
 		// Check if the file is already bookmarked
 		if (user && user.bookMarkList) {
 			const isAlreadyBookmarked = user.bookMarkList.some(
-				(bookmark) => bookmark.file_id === file_id
+				(bookmark) => bookmark.file_id === parseInt(file_id)
 			);
 			setIsBookmarked(isAlreadyBookmarked);
 		}
@@ -224,7 +230,7 @@ const ViewFile = () => {
 							/>
 						) : (
 							<iframe
-								src={`${file.file}#toolbar=0`}
+								src={`${BACKEND_URL}${file.file}#toolbar=0`}
 								className="w-full h-[600px] border-none rounded-lg shadow-lg"
 								title={file.name}
 							/>

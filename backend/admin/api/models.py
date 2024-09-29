@@ -8,13 +8,14 @@ class User(models.Model):
     email = models.CharField(max_length=100, unique=True)
     phoneNumber = models.CharField(max_length=100, null=True)
     intrest = models.CharField(max_length=100, null=True)
-    ratings = models.BigIntegerField(default=0)
-    ratingList = models.JSONField(default=[])
-    views = models.BigIntegerField(default=0)
-    viewList = models.JSONField(default=[])
-    uploads = models.BigIntegerField(default=0)
+    ratings = models.BigIntegerField(default=0, null=True)
+    ratingList = models.JSONField(default=[], null=True)
+    views = models.BigIntegerField(default=0, null=True)
+    viewList = models.JSONField(default=[], null=True)
+    uploads = models.BigIntegerField(default=0, null=True)
     gender = models.CharField(max_length=20, blank=True, null=True)
-    bookMarkList = models.JSONField(default=[])
+    bookMarkList = models.JSONField(default=[], null=True)
+    chatList = models.JSONField(default=[], null=True)
 
     def __str__(self):
         return self.name

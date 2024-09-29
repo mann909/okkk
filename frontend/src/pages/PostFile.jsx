@@ -59,7 +59,6 @@ const PostFile = () => {
 		formData.append("file", file);
 
 		try {
-			console.log("INSIDE");
 			const res = await axios.post(
 				`${BACKEND_URL}/api/v1/file/postFile`,
 				formData,
@@ -73,6 +72,12 @@ const PostFile = () => {
 				toast.error(res.data.message);
 			} else {
 				toast.success("File Uploaded successfully");
+				setFileInfo({});
+				setFile(null);
+				setTimeout(() => {
+					navigate("/");
+					window.location.reload();
+				}, 1500);
 			}
 		} catch (error) {
 			console.log(error);

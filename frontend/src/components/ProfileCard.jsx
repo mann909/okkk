@@ -4,6 +4,7 @@ import female from "../assets/female.png";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { AppContext } from "../context/AppContext";
+import { FaEye } from "react-icons/fa";
 
 const ProfileCard = ({
 	name,
@@ -137,7 +138,7 @@ const ProfileCard = ({
 						</div>
 					</div>
 					<div className="text-center flex items-start">
-						<i className="bx bx-check-circle text-green-500 text-base md:text-xl mr-3"></i>
+						<i className="bx bxs-star text-yellow-500 text-base md:text-xl mr-3"></i>
 						<div className="text-justify">
 							<p className="text-sm md:text-base">
 								Ratings: <span className="font-bold">{ratings}</span>
@@ -145,7 +146,7 @@ const ProfileCard = ({
 						</div>
 					</div>
 					<div className="text-center flex items-start">
-						<i className="bx bx-like text-cyan-500 text-base md:text-xl mr-3"></i>
+						<FaEye className="text-cyan-500 text-base md:text-xl mr-3" />
 						<div className="text-justify">
 							<p className="text-sm md:text-base">
 								Views: <span className="font-bold">{views}</span>

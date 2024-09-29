@@ -9,7 +9,7 @@ const StatsCard = ({ uploads }) => {
 				</h2>
 			</div>
 			<div className="text-[#FF5C8A] text-3xl font-bold">{uploads}</div>
-			<p className="text-gray-400 text-xs mt-1">Compared to last month</p>
+			<p className="text-gray-400 text-xs mt-1">Real Time Updated Data</p>
 		</div>
 	);
 };

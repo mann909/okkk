@@ -12,6 +12,7 @@ const AppContextProvider = ({ children }) => {
 		email: "",
 		ratingList: [],
 		bookmarkList: [],
+		chatList: [],
 	});
 	const [loggedIn, setLoggedIn] = useState(false);
 	const [recommendedFiles, setRecommendedFiles] = useState(null);
@@ -51,6 +52,7 @@ const AppContextProvider = ({ children }) => {
 				user.email = temp.email;
 				user.ratingList = temp.ratingList;
 				user.bookmarkList = temp.bookmarkList;
+				user.chatList = temp.chatList;
 				setUser(user);
 				console.log("user after updation", user);
 
@@ -66,8 +68,9 @@ const AppContextProvider = ({ children }) => {
 				setAllFiles(tempAll);
 				setTopRated(tempTop);
 				setPopular(popular);
-
-				// setRecommendedFiles(res.data.recommendedFiles)
+				console.log("recommended");
+				console.log(res.data.recommendedFiles);
+				setRecommendedFiles(res.data.recommendedFiles);
 			}
 		} catch (error) {
 			console.error("Error fetching user data:", error);
