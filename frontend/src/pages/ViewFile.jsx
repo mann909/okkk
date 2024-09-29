@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import {
 	FaDownload,
@@ -191,6 +191,7 @@ const ViewFile = () => {
 								value={file.category}
 							/>
 							<FileInfoItem
+								navigateTo={`/dashboard/${file.uploadedBy.id}`}
 								icon={<FaUser className="text-green-500" />}
 								label="Uploaded by"
 								value={file.uploadedBy.name}
@@ -263,11 +264,12 @@ const ViewFile = () => {
 	);
 };
 
-const FileInfoItem = ({ icon, label, value }) => (
+const FileInfoItem = ({ navigateTo, icon, label, value }) => (
 	<div className="flex items-center space-x-2">
 		{icon}
 		<span className="font-semibold">{label}:</span>
-		<span className="text-gray-300">{value}</span>
+		{navigateTo ? (<Link className="text-gray-300"to={navigateTo}>{value}</Link>):
+		(<span className="text-gray-300" >{value}</span>) }
 	</div>
 );
 

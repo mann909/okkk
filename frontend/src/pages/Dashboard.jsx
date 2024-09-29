@@ -36,9 +36,9 @@ const Dashboard = () => {
 	const data = user || {};
 
 	// Show loading screen if either user or files are still being fetched
-	if (uploads.length == 0) {
-		return <Loading />;
-	}
+	// if (uploads.length == 0) {
+	// 	return <Loading />;
+	// }
 
 	// Render the dashboard once data is available
 	return (

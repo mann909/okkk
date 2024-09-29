@@ -1,17 +1,57 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import phy from "../assets/physics.png";
+// import phy from "../assets/physics.png";
+// import chem from "../assets/Chemistry.jpg"
+import images from "../assets/images"
 import { FaEye } from "react-icons/fa";
 
 const FileCard = ({ material }) => {
+
+	const getCurrImage = (str) => {
+		switch (str) {
+			case "Physics":
+				return images.phy;
+			case "Chemistry":
+				return images.chem;
+			case "Mathematics":
+				return images.math;
+			case "Biology":
+				return images.bio;
+			case "Computer Science":
+				return images.CS;
+			case "English":
+				return images.eng;
+			case "Engineering":
+				return images.engg;
+			case "Economics":
+				return images.eco;
+			case "Geography":
+				return images.geo;
+			case "History":
+				return images.history;
+			case "Law":
+				return images.law;
+			case "Organic Chemistry":
+				return images.orgChem;
+			case "Political Science":
+				return images.politicalScience;
+			case "Psychology":
+				return images.psy;
+			default:
+				return images.def; 
+		}
+	};
+	
 	const navigate = useNavigate();
+
+	const currImg = getCurrImage(material.category.split(",")[0])
 
 	return (
 		<div className="w-64 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
 			<div className="h-32 bg-gray-200 flex items-center justify-center">
 				<img
-					src={phy}
+					src={currImg}
 					alt="File thumbnail"
 					className="w-full h-full object-cover"
 				/>

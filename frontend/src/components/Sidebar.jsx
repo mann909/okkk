@@ -98,6 +98,54 @@ const Sidebar = () => {
 					</button>
 					<span className="tooltip">PostFile</span>
 				</li>
+				<li>
+					<button
+						onClick={() => {
+							navigate("/bookmarks");
+							setIsOpen(false);
+						}}
+					>
+						<i className="bx bx-bookmark"></i>
+						<span className="links_name">Bookmarks</span>
+					</button>
+					<span className="tooltip">Bookmarks</span>
+				</li>
+				<li>
+					<button
+						onClick={() => {
+							navigate("/allUsers");
+							setIsOpen(false);
+						}}
+					>
+						<i className="bx bx-group"></i>
+						<span className="links_name">All Users</span>
+					</button>
+					<span className="tooltip">All Users</span>
+				</li>
+				<li>
+					<button
+						onClick={() => {
+							navigate("/chatrooms");
+							setIsOpen(false);
+						}}
+					>
+						<i className="bx bx-chat"></i>
+						<span className="links_name">Chat Rooms</span>
+					</button>
+					<span className="tooltip">Chat Rooms</span>
+				</li>
+				<li>
+					<button
+						onClick={() => {
+							navigate("/allFiles");
+							setIsOpen(false);
+						}}
+					>
+						<i className="bx bx-folder"></i>
+						<span className="links_name">All Files</span>
+					</button>
+					<span className="tooltip">All Files</span>
+				</li>
 				{/* <li className="relative">
           <button onClick={togglePopup}>
             <i className="bx bx-chat"></i>

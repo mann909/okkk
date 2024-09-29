@@ -201,15 +201,19 @@ class GetUserView(APIView):
             for i in files:
                 ser = FileSerializer(i)
                 all_file_data+=ser.data,
+            
 
             recommended_files_data = []
-            recommended_model_files = getRecommendedFiles(all_file_data, user.ratingList, user.viewList)
-            recommended_file_ids=[]
-            for i in recommended_model_files:
-                recommended_file_ids.append(i['id'])
-                # Fetch File objects for recommended file IDs
-            recommended_files = File.objects.filter(id__in=recommended_file_ids)
-            recommended_files_data = FileSerializer(recommended_files, many=True).data
+            if user.ratingList or user.viewList:
+                recommended_model_files = getRecommendedFiles(all_file_data, user.ratingList, user.viewList)
+                recommended_file_ids=[]
+                print("here")    
+                for i in recommended_model_files:
+                    recommended_file_ids.append(i['id'])
+                    # Fetch File objects for recommended file IDs
+            
+                recommended_files = File.objects.filter(id__in=recommended_file_ids)
+                recommended_files_data = FileSerializer(recommended_files, many=True).data
 
             # Serialize user data
 
@@ -240,7 +244,7 @@ class GetUserView(APIView):
                 'status': 500,
                 'message': 'Error while fetching user data',
                 'error': str(e)
-            })    
+            })  
  
 class GetUserByIdView(APIView):
     permission_classes = [AllowAny]  # Ensure the user is authenticated
